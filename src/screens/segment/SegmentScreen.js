@@ -98,107 +98,88 @@ const SegmentScreen = () => {
   };
 
   //
+  const imageRef = useRef(null);
+  const [annotations, setAnnotations] = useState([]); // Array of annotations
+  const [newAnnotation, setNewAnnotation] = useState(null); // State for creating annotations
+
   const handleTouchStart = event => {
-    if (isDrawingBox) return;
+    if (!selectedImg) return; // Do nothing if no image is loaded
 
-    if (!isDrawing) {
-      setIsDrawing(true);
-      const newPath = [];
-      newPath.push({
-        x: event.nativeEvent.locationX,
-        y: event.nativeEvent.locationY,
-      });
-      setPaths(prevPaths => [...prevPaths, newPath]);
-      return;
+    const imageWidth = imageRef.current.naturalWidth; // Get image width
+    const imageHeight = imageRef.current.naturalHeight; // Get image height
+
+    const {locationX, locationY} = event.nativeEvent; // Get touch coordinates
+
+    if (
+      locationX >= 0 &&
+      locationX <= imageWidth &&
+      locationY >= 0 &&
+      locationY <= imageHeight
+    ) {
+      setNewAnnotation({x: locationX, y: locationY, width: 0, height: 0});
     }
-
-    setIsDrawingBox(true);
-    setBoundingBox({
-      x: event.nativeEvent.locationX,
-      y: event.nativeEvent.locationY,
-      width: 0,
-      height: 0,
-    });
   };
 
   const handleTouchMove = event => {
-    if (!isDrawing && !isDrawingBox) return;
+    if (!selectedImg || !newAnnotation) return; // Do nothing if no image or creating annotation
 
-    if (isDrawing) {
-      const currentPath = paths[paths.length - 1];
-      currentPath.push({
-        x: event.nativeEvent.locationX,
-        y: event.nativeEvent.locationY,
-      });
-      setPaths(prevPaths => [...prevPaths]);
-      return;
+    const {locationX, locationY} = event.nativeEvent;
+
+    const imageWidth = imageRef.current.naturalWidth;
+    const imageHeight = imageRef.current.naturalHeight;
+
+    if (
+      locationX >= 0 &&
+      locationX <= imageWidth &&
+      locationY >= 0 &&
+      locationY <= imageHeight
+    ) {
+      const width = locationX - newAnnotation.x;
+      const height = locationY - newAnnotation.y;
+      setNewAnnotation({...newAnnotation, width, height});
     }
-
-    const currentX = event.nativeEvent.locationX;
-    const currentY = event.nativeEvent.locationY;
-    const startX = boundingBox.x;
-    const startY = boundingBox.y;
-
-    setBoundingBox(prevBox => ({
-      ...prevBox,
-      width: Math.max(currentX, startX) - startX,
-      height: Math.max(currentY, startY) - startY,
-    }));
   };
 
   const handleTouchEnd = () => {
-    setIsDrawing(false);
-    setIsDrawingBox(false);
+    if (!selectedImg || !newAnnotation) return; // Do nothing if no image or creating annotation
+
+    const {locationX, locationY} = event.nativeEvent;
+
+    const imageWidth = imageRef.current.naturalWidth;
+    const imageHeight = imageRef.current.naturalHeight;
+
+    // Check if touch is within image boundaries
+    if (
+      locationX >= 0 &&
+      locationX <= imageWidth &&
+      locationY >= 0 &&
+      locationY <= imageHeight
+    ) {
+      const width = locationX - newAnnotation.x;
+      const height = locationY - newAnnotation.y;
+      const annotationToAdd = {
+        x: newAnnotation.x,
+        y: newAnnotation.y,
+        width,
+        height,
+      };
+      setAnnotations([...annotations, annotationToAdd]);
+    }
+    setNewAnnotation(null);
   };
-
-  // useEffect(() => {
-  //   const canvas = canvasRef.current;
-  //   if (canvas) {
-  //     const ctx = canvas.getContext('2d');
-  //     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  //     if (image) {
-  //       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-  //     }
-
-  //     ctx.lineWidth = 5; // Adjust line width as desired
-  //     ctx.lineCap = 'round'; // Adjust line cap style as desired
-  //     ctx.strokeStyle = 'blue'; // Adjust stroke style as desired
-
-  //     paths.forEach(path => {
-  //       ctx.beginPath();
-  //       ctx.moveTo(path[0].x, path[0].y);
-  //       path.forEach(point => {
-  //         ctx.lineTo(point.x, point.y);
-  //       });
-  //       ctx.stroke();
-  //     });
-
-  //     ctx.strokeStyle = 'red'; // Adjust color as desired
-  //     ctx.lineWidth = 2; // Adjust width as desired
-  //     ctx.strokeRect(
-  //       boundingBox.x,
-  //       boundingBox.y,
-  //       boundingBox.width,
-  //       boundingBox.height,
-  //     );
-
-  //     const annotationText = 'Your annotation'; // Replace with your text
-  //     const annotationX = boundingBox.x + 10; // Adjust position as desired
-  //     const annotationY = boundingBox.y - 10; // Adjust position as desired
-
-  //     ctx.font = '16px Arial'; // Adjust font and size as desired
-  //     ctx.fillStyle = 'black'; // Adjust color as desired
-  //     ctx.fillText(annotationText, annotationX, annotationY);
-  //   }
-  // }, [paths, image, boundingBox, canvasRef]);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.bodyContainer}>
         <Text style={styles.text}>UPLOAD AN IMAGE</Text>
         <View style={styles.frame}>
-          <Canvas id="bbox" style={styles.canvas} ref={canvasRef}>
+          <Canvas
+            id="bbox"
+            style={styles.canvas}
+            ref={canvasRef}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}>
             {image && (
               <Image
                 ref={imageRef}
@@ -209,11 +190,6 @@ const SegmentScreen = () => {
                 width={resizeW}
                 height={resizeH}
               />
-            )}
-            {isDrawing && (
-              <View style={[styles.boundingBox, calculateDimensions()]}>
-                {/* Optional: Add content within the bounding box here */}
-              </View>
             )}
           </Canvas>
         </View>
