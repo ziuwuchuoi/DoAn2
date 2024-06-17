@@ -19,14 +19,19 @@ import {
   Fill,
   Box,
   BoxShadow,
-  rrect,
-  rect,
-  Paint,
-  vec,
-  Group,
   Text as RNSText,
-  useFont,
 } from '@shopify/react-native-skia';
+import {
+  GestureEvent,
+  PanGestureHandler,
+  GestureHandlerRootView,
+  PanGestureHandlerEventPayload,
+  State,
+} from 'react-native-gesture-handler';
+
+import {PanResponder} from 'react-native';
+
+import {useSharedValue} from 'react-native-reanimated';
 
 const SegmentScreen = () => {
   const [selectedImg, setSelectedImg] = useState(null);
@@ -64,8 +69,8 @@ const SegmentScreen = () => {
       savePhotos: true,
       mediaType: 'photo',
       includeBase64: false,
-      maxHeight: 2000,
-      maxWidth: 2000,
+      maxHeight: 3000,
+      maxWidth: 3000,
     };
 
     launchImageLibrary(options, response => {
@@ -94,22 +99,79 @@ const SegmentScreen = () => {
     });
   };
 
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [startX, setStartX] = useState(null);
+  const [startY, setStartY] = useState(null);
+  const [endX, setEndX] = useState(null);
+  const [endY, setEndY] = useState(null);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: evt => {
+        if (!isDrawing) {
+          setIsDrawing(true);
+          setStartX(evt.nativeEvent.x);
+          setStartY(evt.nativeEvent.y);
+        }
+        return true;
+      },
+      onMoveShouldSetPanResponder: evt => true,
+      onPanResponderMove: evt => {
+        if (isDrawing) {
+          setEndX(evt.nativeEvent.x);
+          setEndY(evt.nativeEvent.y);
+        }
+      },
+      onPanResponderRelease: evt => {
+        if (isDrawing) {
+          setIsDrawing(false);
+          setEndX(evt.nativeEvent.x);
+          setEndY(evt.nativeEvent.y);
+        }
+      },
+    }),
+  ).current;
+
+  const calculateDimensions = () => {
+    if (startX !== null && startY !== null && endX !== null && endY !== null) {
+      return {
+        left: Math.min(startX, endX),
+        top: Math.min(startY, endY),
+        width: Math.abs(endX - startX),
+        height: Math.abs(endY - startY),
+      };
+    } else {
+      return {}; // Or set default values
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.bodyContainer}>
         <Text style={styles.text}>UPLOAD AN IMAGE</Text>
         <View style={styles.frame}>
-          <Canvas style={styles.frame} ref={canvasRef}>
-            <Image
-              image={image}
-              fit="cover"
-              x={0}
-              y={0}
-              width={resizeW}
-              height={resizeH}
-            />
+          <Canvas
+            style={styles.canvas}
+            // {...panResponder.panHandlers}
+            ref={canvasRef}>
+            {image && (
+              <Image
+                image={image}
+                fit="cover"
+                x={0}
+                y={0}
+                width={resizeW}
+                height={resizeH}
+              />
+            )}
+            {isDrawing && (
+              <View style={[styles.boundingBox, calculateDimensions()]}>
+                {/* Optional: Add content within the bounding box here */}
+              </View>
+            )}
           </Canvas>
         </View>
+
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             onPress={() => {}}
@@ -120,7 +182,7 @@ const SegmentScreen = () => {
             <Text style={[styles.label, {color: '#020843'}]}>Reset</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => openImagePicker()}
+            onPress={openImagePicker}
             style={[
               styles.button,
               {backgroundColor: 'rgba(227, 223, 205, 0.26)'},
@@ -162,6 +224,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#020843',
     borderRadius: 25,
     marginBottom: 20,
+    alignItems: 'center',
+  },
+  canvas: {
+    width: '100%',
+    height: '100%',
+    //backgroundColor: 'yellow',
+    borderRadius: 25,
+    marginBottom: 20,
+    zIndex: 10000,
+    //position: 'absolute',
+  },
+  annotation: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    color: 'white',
+    padding: 5,
+    borderRadius: 3,
+  },
+  boundingBox: {
+    position: 'absolute',
+    borderWidth: 2,
+    borderColor: 'blue',
+    opacity: 0.5,
   },
   buttonContainer: {
     width: '100%',
