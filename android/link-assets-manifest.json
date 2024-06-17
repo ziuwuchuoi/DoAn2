@@ -1,0 +1,25 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "src/assets/fonts/AbhayaLibre-Bold.ttf",
+      "sha1": "f93fa32a87de489c430b55fbcb4f24bd49880467"
+    },
+    {
+      "path": "src/assets/fonts/AbhayaLibre-ExtraBold.ttf",
+      "sha1": "9d2a7a176ee329a2f2478858843c614cf57a9472"
+    },
+    {
+      "path": "src/assets/fonts/AbhayaLibre-Medium.ttf",
+      "sha1": "6cfa0f3046032771cf84f0c7396513e302f075fb"
+    },
+    {
+      "path": "src/assets/fonts/AbhayaLibre-Regular.ttf",
+      "sha1": "4e41d2773850d3f768979da22d221fc8669c0727"
+    },
+    {
+      "path": "src/assets/fonts/AbhayaLibre-SemiBold.ttf",
+      "sha1": "676210093eae0db23b9b72124545c6372fb0237e"
+    }
+  ]
+}

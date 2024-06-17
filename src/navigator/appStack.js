@@ -5,6 +5,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import HomeScreen from '../screens/home/HomeScreen';
 import SegmentScreen from '../screens/segment/SegmentScreen';
+import ResultScreen from '../screens/result/ResultScreen';
 import BottomTabs from './bottomTab';
 
 const AppStack = () => {
@@ -27,6 +28,11 @@ const AppStack = () => {
       <Stack.Screen
         name="Segment"
         component={SegmentScreen}
+        screenOptions={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="Result"
+        component={ResultScreen}
         screenOptions={{headerShown: false}}
       />
     </Stack.Navigator>
