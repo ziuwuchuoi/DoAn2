@@ -21,17 +21,6 @@ import {
   BoxShadow,
   Text as RNSText,
 } from '@shopify/react-native-skia';
-import {
-  GestureEvent,
-  PanGestureHandler,
-  GestureHandlerRootView,
-  PanGestureHandlerEventPayload,
-  State,
-} from 'react-native-gesture-handler';
-
-import {PanResponder} from 'react-native';
-
-import {useSharedValue} from 'react-native-reanimated';
 
 const SegmentScreen = () => {
   const [selectedImg, setSelectedImg] = useState(null);
@@ -43,6 +32,16 @@ const SegmentScreen = () => {
   //const {width, height} = Dimensions.get('window');
   const [resizeW, setResizeW] = useState(null);
   const [resizeH, setResizeH] = useState(null);
+
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [isDrawingBox, setIsDrawingBox] = useState(false);
+  const [paths, setPaths] = useState([]);
+  const [boundingBox, setBoundingBox] = useState({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  });
 
   let file = {
     uri: '', // e.g. 'file:///path/to/file/image123.jpg'
@@ -80,7 +79,6 @@ const SegmentScreen = () => {
         console.log('Image picker error: ', response.error);
       } else {
         let imageUri = response.uri || response.assets?.[0]?.uri;
-        let base64Image = response.base64 | response.assets?.[0]?.base64;
         file.uri = imageUri;
         file.type = response.type || response.assets?.[0]?.type;
         file.name = response.fileName || response.assets?.[0]?.fileName;
@@ -99,65 +97,113 @@ const SegmentScreen = () => {
     });
   };
 
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [startX, setStartX] = useState(null);
-  const [startY, setStartY] = useState(null);
-  const [endX, setEndX] = useState(null);
-  const [endY, setEndY] = useState(null);
+  //
+  const handleTouchStart = event => {
+    if (isDrawingBox) return;
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: evt => {
-        if (!isDrawing) {
-          setIsDrawing(true);
-          setStartX(evt.nativeEvent.x);
-          setStartY(evt.nativeEvent.y);
-        }
-        return true;
-      },
-      onMoveShouldSetPanResponder: evt => true,
-      onPanResponderMove: evt => {
-        if (isDrawing) {
-          setEndX(evt.nativeEvent.x);
-          setEndY(evt.nativeEvent.y);
-        }
-      },
-      onPanResponderRelease: evt => {
-        if (isDrawing) {
-          setIsDrawing(false);
-          setEndX(evt.nativeEvent.x);
-          setEndY(evt.nativeEvent.y);
-        }
-      },
-    }),
-  ).current;
-
-  const calculateDimensions = () => {
-    if (startX !== null && startY !== null && endX !== null && endY !== null) {
-      return {
-        left: Math.min(startX, endX),
-        top: Math.min(startY, endY),
-        width: Math.abs(endX - startX),
-        height: Math.abs(endY - startY),
-      };
-    } else {
-      return {}; // Or set default values
+    if (!isDrawing) {
+      setIsDrawing(true);
+      const newPath = [];
+      newPath.push({
+        x: event.nativeEvent.locationX,
+        y: event.nativeEvent.locationY,
+      });
+      setPaths(prevPaths => [...prevPaths, newPath]);
+      return;
     }
+
+    setIsDrawingBox(true);
+    setBoundingBox({
+      x: event.nativeEvent.locationX,
+      y: event.nativeEvent.locationY,
+      width: 0,
+      height: 0,
+    });
   };
+
+  const handleTouchMove = event => {
+    if (!isDrawing && !isDrawingBox) return;
+
+    if (isDrawing) {
+      const currentPath = paths[paths.length - 1];
+      currentPath.push({
+        x: event.nativeEvent.locationX,
+        y: event.nativeEvent.locationY,
+      });
+      setPaths(prevPaths => [...prevPaths]);
+      return;
+    }
+
+    const currentX = event.nativeEvent.locationX;
+    const currentY = event.nativeEvent.locationY;
+    const startX = boundingBox.x;
+    const startY = boundingBox.y;
+
+    setBoundingBox(prevBox => ({
+      ...prevBox,
+      width: Math.max(currentX, startX) - startX,
+      height: Math.max(currentY, startY) - startY,
+    }));
+  };
+
+  const handleTouchEnd = () => {
+    setIsDrawing(false);
+    setIsDrawingBox(false);
+  };
+
+  // useEffect(() => {
+  //   const canvas = canvasRef.current;
+  //   if (canvas) {
+  //     const ctx = canvas.getContext('2d');
+  //     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  //     if (image) {
+  //       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  //     }
+
+  //     ctx.lineWidth = 5; // Adjust line width as desired
+  //     ctx.lineCap = 'round'; // Adjust line cap style as desired
+  //     ctx.strokeStyle = 'blue'; // Adjust stroke style as desired
+
+  //     paths.forEach(path => {
+  //       ctx.beginPath();
+  //       ctx.moveTo(path[0].x, path[0].y);
+  //       path.forEach(point => {
+  //         ctx.lineTo(point.x, point.y);
+  //       });
+  //       ctx.stroke();
+  //     });
+
+  //     ctx.strokeStyle = 'red'; // Adjust color as desired
+  //     ctx.lineWidth = 2; // Adjust width as desired
+  //     ctx.strokeRect(
+  //       boundingBox.x,
+  //       boundingBox.y,
+  //       boundingBox.width,
+  //       boundingBox.height,
+  //     );
+
+  //     const annotationText = 'Your annotation'; // Replace with your text
+  //     const annotationX = boundingBox.x + 10; // Adjust position as desired
+  //     const annotationY = boundingBox.y - 10; // Adjust position as desired
+
+  //     ctx.font = '16px Arial'; // Adjust font and size as desired
+  //     ctx.fillStyle = 'black'; // Adjust color as desired
+  //     ctx.fillText(annotationText, annotationX, annotationY);
+  //   }
+  // }, [paths, image, boundingBox, canvasRef]);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.bodyContainer}>
         <Text style={styles.text}>UPLOAD AN IMAGE</Text>
         <View style={styles.frame}>
-          <Canvas
-            style={styles.canvas}
-            // {...panResponder.panHandlers}
-            ref={canvasRef}>
+          <Canvas id="bbox" style={styles.canvas} ref={canvasRef}>
             {image && (
               <Image
+                ref={imageRef}
                 image={image}
-                fit="cover"
+                fit="contain"
                 x={0}
                 y={0}
                 width={resizeW}
