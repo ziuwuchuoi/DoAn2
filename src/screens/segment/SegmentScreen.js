@@ -4,23 +4,33 @@ import {
   View,
   SafeAreaView,
   TouchableOpacity,
+  Image,
+  PanResponder,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import React, {useState, useRef, useEffect} from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
 import axios from 'axios';
 import FormData from 'form-data';
 // import {scale} from '../../constants';
+// import {
+//   Canvas,
+//   CornerPathEffect,
+//   Image,
+//   useImage,
+//   Rect,
+//   Fill,
+//   Box,
+//   BoxShadow,
+//   Text as RNSText,
+// } from '@shopify/react-native-skia';
+import {useImage} from '@shopify/react-native-skia';
 import {
-  Canvas,
-  CornerPathEffect,
-  Image,
-  useImage,
-  Rect,
-  Fill,
-  Box,
-  BoxShadow,
-  Text as RNSText,
-} from '@shopify/react-native-skia';
+  GestureHandlerRootView,
+  PanGestureHandler,
+} from 'react-native-gesture-handler';
+import Canvas from 'react-native-canvas';
 
 const SegmentScreen = () => {
   const [selectedImg, setSelectedImg] = useState(null);
@@ -32,16 +42,6 @@ const SegmentScreen = () => {
   //const {width, height} = Dimensions.get('window');
   const [resizeW, setResizeW] = useState(null);
   const [resizeH, setResizeH] = useState(null);
-
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [isDrawingBox, setIsDrawingBox] = useState(false);
-  const [paths, setPaths] = useState([]);
-  const [boundingBox, setBoundingBox] = useState({
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-  });
 
   let file = {
     uri: '', // e.g. 'file:///path/to/file/image123.jpg'
@@ -98,102 +98,90 @@ const SegmentScreen = () => {
   };
 
   //
-  const imageRef = useRef(null);
-  const [annotations, setAnnotations] = useState([]); // Array of annotations
-  const [newAnnotation, setNewAnnotation] = useState(null); // State for creating annotations
+  const [imageUri, setImageUri] = useState(''); // Replace with your image URI
+  const [isBoxDrawing, setIsBoxDrawing] = useState(false);
+  const [initialX, setInitialX] = useState(0);
+  const [initialY, setInitialY] = useState(0);
+  const boxRef = useRef(null); // Ref for the bounding box View
 
-  const handleTouchStart = event => {
-    if (!selectedImg) return; // Do nothing if no image is loaded
+  const handleImageLoad = event => {
+    const {width, height} = event.nativeEvent.layout;
 
-    const imageWidth = imageRef.current.naturalWidth; // Get image width
-    const imageHeight = imageRef.current.naturalHeight; // Get image height
-
-    const {locationX, locationY} = event.nativeEvent; // Get touch coordinates
-
-    if (
-      locationX >= 0 &&
-      locationX <= imageWidth &&
-      locationY >= 0 &&
-      locationY <= imageHeight
-    ) {
-      setNewAnnotation({x: locationX, y: locationY, width: 0, height: 0});
-    }
+    setImageUri(selectedImg); // Replace with your actual image path
   };
 
-  const handleTouchMove = event => {
-    if (!selectedImg || !newAnnotation) return; // Do nothing if no image or creating annotation
-
-    const {locationX, locationY} = event.nativeEvent;
-
-    const imageWidth = imageRef.current.naturalWidth;
-    const imageHeight = imageRef.current.naturalHeight;
-
-    if (
-      locationX >= 0 &&
-      locationX <= imageWidth &&
-      locationY >= 0 &&
-      locationY <= imageHeight
-    ) {
-      const width = locationX - newAnnotation.x;
-      const height = locationY - newAnnotation.y;
-      setNewAnnotation({...newAnnotation, width, height});
+  const handlePanGestureStart = event => {
+    if (!imageUri) {
+      return; // Handle case where image hasn't loaded yet
     }
+    setIsBoxDrawing(true);
+    setInitialX(event.nativeEvent.x);
+    setInitialY(event.nativeEvent.y);
   };
 
-  const handleTouchEnd = () => {
-    if (!selectedImg || !newAnnotation) return; // Do nothing if no image or creating annotation
-
-    const {locationX, locationY} = event.nativeEvent;
-
-    const imageWidth = imageRef.current.naturalWidth;
-    const imageHeight = imageRef.current.naturalHeight;
-
-    // Check if touch is within image boundaries
-    if (
-      locationX >= 0 &&
-      locationX <= imageWidth &&
-      locationY >= 0 &&
-      locationY <= imageHeight
-    ) {
-      const width = locationX - newAnnotation.x;
-      const height = locationY - newAnnotation.y;
-      const annotationToAdd = {
-        x: newAnnotation.x,
-        y: newAnnotation.y,
-        width,
-        height,
-      };
-      setAnnotations([...annotations, annotationToAdd]);
+  const handlePanGestureMove = event => {
+    if (!isBoxDrawing) {
+      return;
     }
-    setNewAnnotation(null);
+
+    const {translationX, translationY} = event.nativeEvent;
+    const currentX = initialX + translationX;
+    const currentY = initialY + translationY;
+
+    // Ensure box stays within image bounds
+    const screenWidth = Dimensions.get('window').width;
+    const screenHeight = Dimensions.get('window').height;
+    const imageAspectRatio = imageUri
+      ? event.nativeEvent.layout.width / event.nativeEvent.layout.height
+      : 1; // Handle case where image hasn't loaded yet
+    const maxWidth = screenWidth - currentX;
+    const maxHeight = screenHeight - currentY;
+
+    const boxWidth = Math.min(Math.max(currentX - initialX, 0), maxWidth);
+    const boxHeight = Math.min(
+      Math.max(currentY - initialY, 0),
+      maxHeight / imageAspectRatio,
+    );
+
+    boxRef.current.setNativeProps({
+      style: {
+        top: currentY - boxHeight,
+        left: currentX,
+        width: boxWidth,
+        height: boxHeight,
+        borderWidth: 2,
+        borderColor: 'red',
+        backgroundColor: 'rgba(255, 0, 0, 0.2)',
+      },
+    });
+  };
+
+  const handlePanGestureEnd = () => {
+    setIsBoxDrawing(false);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.bodyContainer}>
         <Text style={styles.text}>UPLOAD AN IMAGE</Text>
-        <View style={styles.frame}>
-          <Canvas
-            id="bbox"
-            style={styles.canvas}
-            ref={canvasRef}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}>
-            {image && (
-              <Image
-                ref={imageRef}
-                image={image}
-                fit="contain"
-                x={0}
-                y={0}
-                width={resizeW}
-                height={resizeH}
-              />
+        <GestureHandlerRootView style={{flex: 1}}>
+          <View style={styles.frame}>
+            {selectedImg && (
+              <PanGestureHandler
+                onGestureEvent={handlePanGestureMove}
+                onHandlerStateChange={handlePanGestureStart}
+                onEnded={handlePanGestureEnd}>
+                <Image
+                  source={selectedImg}
+                  style={styles.image}
+                  onLoad={handleImageLoad}
+                />
+              </PanGestureHandler>
             )}
-          </Canvas>
-        </View>
+          </View>
 
+          {isBoxDrawing && <View ref={boxRef} style={styles.boundingBox} />}
+        </GestureHandlerRootView>
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             onPress={() => {}}
@@ -257,20 +245,13 @@ const styles = StyleSheet.create({
     zIndex: 10000,
     //position: 'absolute',
   },
-  annotation: {
-    position: 'absolute',
-    bottom: 10,
-    left: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    color: 'white',
-    padding: 5,
-    borderRadius: 3,
+  image: {
+    flex: 1,
+    resizeMode: 'contain', // Adjust resize mode as needed
   },
   boundingBox: {
     position: 'absolute',
-    borderWidth: 2,
-    borderColor: 'blue',
-    opacity: 0.5,
+    borderRadius: 4, // Optional for rounded corners
   },
   buttonContainer: {
     width: '100%',
@@ -278,6 +259,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: '100',
   },
   button: {
     width: '30%',
