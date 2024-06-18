@@ -27,6 +27,8 @@ type ImageFile = {
   type: string;
 };
 
+type Annotation = [number, number, number, number];
+
 const SegmentScreen: React.FC = () => {
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<Asset | null>(null);
@@ -42,8 +44,10 @@ const SegmentScreen: React.FC = () => {
   const [dimensions, setDimensions] = useState<{w: number; h: number} | null>(
     null,
   );
+  const [newStart, setNewStart] = useState<{x: number; y: number} | null>(null);
 
   const [isDrawing, setIsDrawing] = useState<boolean>(true);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
 
   let file: ImageFile = {
     uri: '',
@@ -102,17 +106,26 @@ const SegmentScreen: React.FC = () => {
 
   const resetBox = () => {
     setStart(null);
+    setNewStart(null);
     setEnd(null);
-    setDimensions({w: 0, h: 0});
+    setDimensions(null);
+    setAnnotations([]);
   };
 
-  const handlePanGestureStart = (event: PanGestureHandlerGestureEvent) => {
-    setStart({x: event.nativeEvent.x, y: event.nativeEvent.y});
-    //setDimensions({w: 0, h: 0});
-    setIsDrawing(true);
+  const handlePanGestureStateChange = (
+    event: PanGestureHandlerGestureEvent,
+  ) => {
+    if (!selectedImg) return;
+
+    if (!start) {
+      const {x, y} = event.nativeEvent;
+      const newStart = {x, y};
+      setStart(newStart);
+      setIsDrawing(true);
+    }
   };
 
-  const handlePanGestureMove = (event: PanGestureHandlerGestureEvent) => {
+  const handlePanGestureEvent = (event: PanGestureHandlerGestureEvent) => {
     if (!selectedImg || !start) return;
 
     const {translationX, translationY} = event.nativeEvent;
@@ -122,29 +135,49 @@ const SegmentScreen: React.FC = () => {
 
     setDimensions({w: newWidth, h: newHeight});
     setEnd({x: start.x + newWidth, y: start.y + newHeight});
+    if (end) {
+      setNewStart({
+        x: Math.abs(end.x - newWidth),
+        y: Math.abs(end.y - newHeight),
+      });
+    }
   };
 
   console.log('startx', start?.x);
   console.log('starty', start?.y);
-  console.log('endx', end?.x);
-  console.log('endx', end?.y);
+  console.log('dw', dimensions?.w);
+  console.log('dh', dimensions?.h);
+
+  useEffect(() => {
+    if (start && dimensions) {
+      const annotation: Annotation = [
+        start.x,
+        start.y,
+        dimensions.w,
+        dimensions.h,
+      ];
+      setAnnotations([annotation]);
+    }
+  }, [start, dimensions]);
+
+  console.log('arr', annotations[0]);
 
   const renderAnnotations = () => {
-    if (!selectedImg || !start || !end) return null;
+    if (!selectedImg || !start || !end || !newStart) return null;
 
-    const boxTop = Math.min(start.y, end.y);
-    const boxLeft = Math.min(start.x, end.x);
-    const boxWidth = Math.abs(start.x - end.x);
-    const boxHeight = Math.abs(start.y - end.y);
+    const boxTop = Math.min(newStart.y, end.y);
+    const boxLeft = Math.min(newStart.x, end.x);
+    const boxWidth = Math.abs(newStart.x - end.x);
+    const boxHeight = Math.abs(newStart.y - end.y);
 
     return (
       <View
         style={{
           position: 'absolute',
-          top: start?.x,
-          left: start?.y,
-          width: dimensions?.w,
-          height: dimensions?.h,
+          top: boxTop,
+          left: boxLeft,
+          width: boxWidth,
+          height: boxHeight,
           borderWidth: 2,
           borderColor: 'blue',
           backgroundColor: 'rgba(0, 0, 255, 0.3)',
@@ -161,8 +194,8 @@ const SegmentScreen: React.FC = () => {
           <GestureHandlerRootView style={{flex: 1}}>
             {selectedImg && resizeW && resizeH && (
               <PanGestureHandler
-                onGestureEvent={handlePanGestureMove}
-                onHandlerStateChange={handlePanGestureStart}>
+                onGestureEvent={handlePanGestureEvent}
+                onHandlerStateChange={handlePanGestureStateChange}>
                 <View>
                   <Image
                     width={resizeW}
@@ -193,7 +226,7 @@ const SegmentScreen: React.FC = () => {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             onPress={() => {
-              resetBox;
+              resetBox();
             }}
             style={[
               styles.button,
