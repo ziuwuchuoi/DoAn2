@@ -117,21 +117,17 @@ const SegmentScreen: React.FC = () => {
 
     const {translationX, translationY} = event.nativeEvent;
 
-    // Calculate new dimensions respecting image boundaries
     const newWidth = Math.max(0, Math.min(resizeW! - start.x, translationX));
     const newHeight = Math.max(0, Math.min(resizeH! - start.y, translationY));
 
-    setEnd({x: start.x + newWidth, y: start.y + newHeight});
     setDimensions({w: newWidth, h: newHeight});
+    setEnd({x: start.x + newWidth, y: start.y + newHeight});
   };
 
-  const handlePanGestureEnd = (event: HandlerStateChangeEvent) => {
-    if (start) {
-      setEnd({x: start.x + dimensions!.w, y: start.y + dimensions!.h});
-    }
-    console.log('w, h', dimensions?.w, dimensions?.h);
-    setIsDrawing(false);
-  };
+  console.log('startx', start?.x);
+  console.log('starty', start?.y);
+  console.log('endx', end?.x);
+  console.log('endx', end?.y);
 
   const renderAnnotations = () => {
     if (!selectedImg || !start || !end) return null;
@@ -145,10 +141,10 @@ const SegmentScreen: React.FC = () => {
       <View
         style={{
           position: 'absolute',
-          top: boxTop,
-          left: boxLeft,
-          width: boxWidth,
-          height: boxHeight,
+          top: start?.x,
+          left: start?.y,
+          width: dimensions?.w,
+          height: dimensions?.h,
           borderWidth: 2,
           borderColor: 'blue',
           backgroundColor: 'rgba(0, 0, 255, 0.3)',
@@ -157,12 +153,6 @@ const SegmentScreen: React.FC = () => {
     );
   };
 
-  console.log('top', start?.y);
-  console.log('left', start?.x);
-  console.log('endx', end?.x);
-  console.log('endy', end?.y);
-  console.log('w', dimensions?.w);
-  console.log('h', dimensions?.h);
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.bodyContainer}>
@@ -172,8 +162,7 @@ const SegmentScreen: React.FC = () => {
             {selectedImg && resizeW && resizeH && (
               <PanGestureHandler
                 onGestureEvent={handlePanGestureMove}
-                onHandlerStateChange={handlePanGestureStart}
-                onEnded={handlePanGestureEnd}>
+                onHandlerStateChange={handlePanGestureStart}>
                 <View>
                   <Image
                     width={resizeW}

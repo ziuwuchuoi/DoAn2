@@ -16,6 +16,7 @@ import {
 import {useImage} from '@shopify/react-native-skia';
 import {
   GestureHandlerRootView,
+  HandlerStateChangeEvent,
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
 } from 'react-native-gesture-handler';
@@ -31,11 +32,18 @@ const SegmentScreen: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<Asset | null>(null);
   const [imgWidth, setImgWidth] = useState<number | null>(null);
   const [imgHeight, setImgHeight] = useState<number | null>(null);
-  const canvasRef = useRef(null);
+
   const image = useImage(selectedImg as string);
   const [resizeW, setResizeW] = useState<number | null>(null);
   const [resizeH, setResizeH] = useState<number | null>(null);
-  const boxRef = useRef<View | null>(null);
+
+  const [start, setStart] = useState<{x: number; y: number} | null>(null);
+  const [end, setEnd] = useState<{x: number; y: number} | null>(null);
+  const [dimensions, setDimensions] = useState<{w: number; h: number} | null>(
+    null,
+  );
+
+  const [isDrawing, setIsDrawing] = useState<boolean>(true);
 
   let file: ImageFile = {
     uri: '',
@@ -92,89 +100,112 @@ const SegmentScreen: React.FC = () => {
     });
   };
 
-  const [isBoxDrawing, setIsBoxDrawing] = useState<boolean>(false);
-  const [initialX, setInitialX] = useState<number>(0);
-  const [initialY, setInitialY] = useState<number>(0);
+  const resetBox = () => {
+    setStart(null);
+    setEnd(null);
+    setDimensions({w: 0, h: 0});
+  };
 
   const handlePanGestureStart = (event: PanGestureHandlerGestureEvent) => {
-    if (!selectedImg) {
-      return; // Handle case where image hasn't loaded yet
-    }
-    setIsBoxDrawing(true);
-    setInitialX(event.nativeEvent.x);
-    setInitialY(event.nativeEvent.y);
+    setStart({x: event.nativeEvent.x, y: event.nativeEvent.y});
+    //setDimensions({w: 0, h: 0});
+    setIsDrawing(true);
   };
 
   const handlePanGestureMove = (event: PanGestureHandlerGestureEvent) => {
-    if (!isBoxDrawing) {
-      return;
-    }
+    if (!selectedImg || !start) return;
 
     const {translationX, translationY} = event.nativeEvent;
-    const currentX = initialX + translationX;
-    const currentY = initialY + translationY;
 
-    const screenWidth = Dimensions.get('window').width;
-    const screenHeight = Dimensions.get('window').height;
-    const imageAspectRatio = selectedImg ? screenWidth / screenHeight : 1;
+    // Calculate new dimensions respecting image boundaries
+    const newWidth = Math.max(0, Math.min(resizeW! - start.x, translationX));
+    const newHeight = Math.max(0, Math.min(resizeH! - start.y, translationY));
 
-    const maxWidth = screenWidth - currentX;
-    const maxHeight = screenHeight - currentY;
+    setEnd({x: start.x + newWidth, y: start.y + newHeight});
+    setDimensions({w: newWidth, h: newHeight});
+  };
 
-    const boxWidth = Math.min(Math.max(currentX - initialX, 0), maxWidth);
-    const boxHeight = Math.min(
-      Math.max(currentY - initialY, 0),
-      maxHeight / imageAspectRatio,
-    );
+  const handlePanGestureEnd = (event: HandlerStateChangeEvent) => {
+    if (start) {
+      setEnd({x: start.x + dimensions!.w, y: start.y + dimensions!.h});
+    }
+    console.log('w, h', dimensions?.w, dimensions?.h);
+    setIsDrawing(false);
+  };
 
-    if (boxRef.current) {
-      boxRef.current.setNativeProps({
-        style: {
-          top: currentY - boxHeight,
-          left: currentX,
+  const renderAnnotations = () => {
+    if (!selectedImg || !start || !end) return null;
+
+    const boxTop = Math.min(start.y, end.y);
+    const boxLeft = Math.min(start.x, end.x);
+    const boxWidth = Math.abs(start.x - end.x);
+    const boxHeight = Math.abs(start.y - end.y);
+
+    return (
+      <View
+        style={{
+          position: 'absolute',
+          top: boxTop,
+          left: boxLeft,
           width: boxWidth,
           height: boxHeight,
           borderWidth: 2,
-          borderColor: 'red',
-          backgroundColor: 'rgba(255, 0, 0, 0.2)',
-        },
-      });
-    }
+          borderColor: 'blue',
+          backgroundColor: 'rgba(0, 0, 255, 0.3)',
+        }}
+      />
+    );
   };
 
-  const handlePanGestureEnd = () => {
-    setIsBoxDrawing(false);
-  };
-
-  console.log('selectImg', selectedImg);
-  console.log('selectFile', selectedFile);
-
+  console.log('top', start?.y);
+  console.log('left', start?.x);
+  console.log('endx', end?.x);
+  console.log('endy', end?.y);
+  console.log('w', dimensions?.w);
+  console.log('h', dimensions?.h);
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.bodyContainer}>
         <Text style={styles.text}>UPLOAD AN IMAGE</Text>
-        <GestureHandlerRootView style={{flex: 1}}>
-          <View style={styles.frame}>
-            {selectedImg && (
+        <View style={styles.frame}>
+          <GestureHandlerRootView style={{flex: 1}}>
+            {selectedImg && resizeW && resizeH && (
               <PanGestureHandler
                 onGestureEvent={handlePanGestureMove}
                 onHandlerStateChange={handlePanGestureStart}
                 onEnded={handlePanGestureEnd}>
-                <Image
-                  width={resizeW}
-                  height={resizeH}
-                  source={{uri: selectedImg}}
-                  style={styles.image}
-                />
+                <View>
+                  <Image
+                    width={resizeW}
+                    height={resizeH}
+                    source={{uri: selectedImg}}
+                    style={styles.image}
+                  />
+                  {isDrawing && start && dimensions && (
+                    <View
+                      style={{
+                        position: 'absolute',
+                        backgroundColor: 'rgba(0, 0, 255, 0.3)',
+                        top: start.y,
+                        left: start.x,
+                        width: dimensions.w,
+                        height: dimensions.h,
+                        borderWidth: 2,
+                        borderColor: 'blue',
+                      }}
+                    />
+                  )}
+                  {!isDrawing && renderAnnotations()}
+                </View>
               </PanGestureHandler>
             )}
-          </View>
-
-          {isBoxDrawing && <View ref={boxRef} style={styles.boundingBox} />}
-        </GestureHandlerRootView>
+          </GestureHandlerRootView>
+        </View>
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            onPress={() => {}}
+            onPress={() => {
+              resetBox;
+            }}
             style={[
               styles.button,
               {backgroundColor: 'rgba(227, 223, 205, 0.26)'},
@@ -247,7 +278,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 400,
+    //marginTop: 400,
   },
   button: {
     width: '30%',
