@@ -16,10 +16,10 @@ import {
 import {useImage} from '@shopify/react-native-skia';
 import {
   GestureHandlerRootView,
-  HandlerStateChangeEvent,
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
 } from 'react-native-gesture-handler';
+import axios from 'axios';
 
 type ImageFile = {
   uri: string;
@@ -104,6 +104,31 @@ const SegmentScreen: React.FC = () => {
     });
   };
 
+  async function handleSubmit() {
+    if (file !== null) {
+      const data = new FormData();
+      data.append('image', file);
+      data.append('boundingbox', JSON.stringify(annotations));
+
+      const config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: 'https://zichuoi-segmedda2.hf.space/test',
+        headers: {'Content-Type': 'multipart/form-data'},
+        data: data,
+      };
+
+      try {
+        const response = await axios(config);
+        console.log('Upload successful', response.data);
+      } catch (error) {
+        console.error('Upload failed', error);
+      }
+    } else {
+      console.error('No file selected');
+    }
+  }
+
   const resetBox = () => {
     setStart(null);
     setNewStart(null);
@@ -142,11 +167,6 @@ const SegmentScreen: React.FC = () => {
       });
     }
   };
-
-  console.log('startx', start?.x);
-  console.log('starty', start?.y);
-  console.log('dw', dimensions?.w);
-  console.log('dh', dimensions?.h);
 
   useEffect(() => {
     if (start && dimensions) {
@@ -243,7 +263,9 @@ const SegmentScreen: React.FC = () => {
             <Text style={[styles.label, {color: '#020843'}]}>Upload</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => {}}
+            onPress={() => {
+              handleSubmit();
+            }}
             style={[styles.button, {backgroundColor: '#020843'}]}>
             <Text style={[styles.label, {color: '#ffff'}]}>Predict</Text>
           </TouchableOpacity>
