@@ -1,3 +1,4 @@
+//code cu
 import {
   StyleSheet,
   Text,
@@ -13,18 +14,7 @@ import React, {useState, useRef, useEffect} from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
 import axios from 'axios';
 import FormData from 'form-data';
-// import {scale} from '../../constants';
-// import {
-//   Canvas,
-//   CornerPathEffect,
-//   Image,
-//   useImage,
-//   Rect,
-//   Fill,
-//   Box,
-//   BoxShadow,
-//   Text as RNSText,
-// } from '@shopify/react-native-skia';
+
 import {useImage} from '@shopify/react-native-skia';
 import {
   GestureHandlerRootView,
