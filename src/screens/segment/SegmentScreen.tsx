@@ -16,6 +16,7 @@ import {
 import {useImage} from '@shopify/react-native-skia';
 import {
   GestureHandlerRootView,
+  HandlerStateChangeEvent,
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
 } from 'react-native-gesture-handler';
@@ -31,17 +32,18 @@ const SegmentScreen: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<Asset | null>(null);
   const [imgWidth, setImgWidth] = useState<number | null>(null);
   const [imgHeight, setImgHeight] = useState<number | null>(null);
-  const canvasRef = useRef(null);
+
   const image = useImage(selectedImg as string);
   const [resizeW, setResizeW] = useState<number | null>(null);
   const [resizeH, setResizeH] = useState<number | null>(null);
-  const boxRef = useRef<View | null>(null);
 
   const [start, setStart] = useState<{x: number; y: number} | null>(null);
   const [end, setEnd] = useState<{x: number; y: number} | null>(null);
   const [dimensions, setDimensions] = useState<{w: number; h: number} | null>(
     null,
   );
+
+  const [isDrawing, setIsDrawing] = useState<boolean>(true);
 
   let file: ImageFile = {
     uri: '',
@@ -98,32 +100,69 @@ const SegmentScreen: React.FC = () => {
     });
   };
 
-  const [isBoxDrawing, setIsBoxDrawing] = useState<boolean>(false);
-  const [initialX, setInitialX] = useState<number>(0);
-  const [initialY, setInitialY] = useState<number>(0);
-
-  const handlePanGestureStart = (event: PanGestureHandlerGestureEvent) => {
-    setStart({x: event.nativeEvent.x, y: event.nativeEvent.y});
+  const resetBox = () => {
+    setStart(null);
+    setEnd(null);
     setDimensions({w: 0, h: 0});
   };
 
-  const handlePanGestureMove = (event: PanGestureHandlerGestureEvent) => {
-    if (start) {
-      const {translationX, translationY} = event.nativeEvent;
-      setDimensions({w: translationX, h: translationY});
-    }
+  const handlePanGestureStart = (event: PanGestureHandlerGestureEvent) => {
+    setStart({x: event.nativeEvent.x, y: event.nativeEvent.y});
+    //setDimensions({w: 0, h: 0});
+    setIsDrawing(true);
   };
-  const handlePanGestureEnd = (
-    event: HandlerStateChangeEvent<Record<string, unknown>>,
-  ) => {
+
+  const handlePanGestureMove = (event: PanGestureHandlerGestureEvent) => {
+    if (!selectedImg || !start) return;
+
+    const {translationX, translationY} = event.nativeEvent;
+
+    // Calculate new dimensions respecting image boundaries
+    const newWidth = Math.max(0, Math.min(resizeW! - start.x, translationX));
+    const newHeight = Math.max(0, Math.min(resizeH! - start.y, translationY));
+
+    setEnd({x: start.x + newWidth, y: start.y + newHeight});
+    setDimensions({w: newWidth, h: newHeight});
+  };
+
+  const handlePanGestureEnd = (event: HandlerStateChangeEvent) => {
     if (start) {
       setEnd({x: start.x + dimensions!.w, y: start.y + dimensions!.h});
     }
+    console.log('w, h', dimensions?.w, dimensions?.h);
+    setIsDrawing(false);
   };
 
-  console.log('selectImg', selectedImg);
-  console.log('selectFile', selectedFile);
+  const renderAnnotations = () => {
+    if (!selectedImg || !start || !end) return null;
 
+    const boxTop = Math.min(start.y, end.y);
+    const boxLeft = Math.min(start.x, end.x);
+    const boxWidth = Math.abs(start.x - end.x);
+    const boxHeight = Math.abs(start.y - end.y);
+
+    return (
+      <View
+        style={{
+          position: 'absolute',
+          top: boxTop,
+          left: boxLeft,
+          width: boxWidth,
+          height: boxHeight,
+          borderWidth: 2,
+          borderColor: 'blue',
+          backgroundColor: 'rgba(0, 0, 255, 0.3)',
+        }}
+      />
+    );
+  };
+
+  console.log('top', start?.y);
+  console.log('left', start?.x);
+  console.log('endx', end?.x);
+  console.log('endy', end?.y);
+  console.log('w', dimensions?.w);
+  console.log('h', dimensions?.h);
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.bodyContainer}>
@@ -137,13 +176,12 @@ const SegmentScreen: React.FC = () => {
                 onEnded={handlePanGestureEnd}>
                 <View>
                   <Image
-                    //ref={boxRef}
                     width={resizeW}
                     height={resizeH}
                     source={{uri: selectedImg}}
                     style={styles.image}
                   />
-                  {start && dimensions && (
+                  {isDrawing && start && dimensions && (
                     <View
                       style={{
                         position: 'absolute',
@@ -154,8 +192,10 @@ const SegmentScreen: React.FC = () => {
                         height: dimensions.h,
                         borderWidth: 2,
                         borderColor: 'blue',
-                      }}></View>
+                      }}
+                    />
                   )}
+                  {!isDrawing && renderAnnotations()}
                 </View>
               </PanGestureHandler>
             )}
@@ -163,7 +203,9 @@ const SegmentScreen: React.FC = () => {
         </View>
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            onPress={() => {}}
+            onPress={() => {
+              resetBox;
+            }}
             style={[
               styles.button,
               {backgroundColor: 'rgba(227, 223, 205, 0.26)'},
