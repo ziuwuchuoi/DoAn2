@@ -8,48 +8,37 @@ import {
   Dimensions,
 } from 'react-native';
 import React, {useState, useRef, useEffect} from 'react';
-import {
-  launchImageLibrary,
-  ImageLibraryOptions,
-  Asset,
-} from 'react-native-image-picker';
+import {launchImageLibrary} from 'react-native-image-picker';
 import {useImage} from '@shopify/react-native-skia';
 import {
   GestureHandlerRootView,
   PanGestureHandler,
-  PanGestureHandlerGestureEvent,
 } from 'react-native-gesture-handler';
 import axios from 'axios';
+import {useNavigation} from '@react-navigation/native';
+import {scale} from '../../constants';
+import {FONT_FAMILY} from '../../constants';
 
-type ImageFile = {
-  uri: string;
-  name: string;
-  type: string;
-};
+const SegmentScreen = () => {
+  const navigation = useNavigation();
+  const [selectedImg, setSelectedImg] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [imgWidth, setImgWidth] = useState(null);
+  const [imgHeight, setImgHeight] = useState(null);
 
-type Annotation = [number, number, number, number];
+  const image = useImage(selectedImg);
+  const [resizeW, setResizeW] = useState(null);
+  const [resizeH, setResizeH] = useState(null);
 
-const SegmentScreen: React.FC = () => {
-  const [selectedImg, setSelectedImg] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<Asset | null>(null);
-  const [imgWidth, setImgWidth] = useState<number | null>(null);
-  const [imgHeight, setImgHeight] = useState<number | null>(null);
+  const [start, setStart] = useState(null);
+  const [end, setEnd] = useState(null);
+  const [dimensions, setDimensions] = useState(null);
+  const [newStart, setNewStart] = useState(null);
 
-  const image = useImage(selectedImg as string);
-  const [resizeW, setResizeW] = useState<number | null>(null);
-  const [resizeH, setResizeH] = useState<number | null>(null);
+  const [isDrawing, setIsDrawing] = useState(true);
+  const [annotations, setAnnotations] = useState([]);
 
-  const [start, setStart] = useState<{x: number; y: number} | null>(null);
-  const [end, setEnd] = useState<{x: number; y: number} | null>(null);
-  const [dimensions, setDimensions] = useState<{w: number; h: number} | null>(
-    null,
-  );
-  const [newStart, setNewStart] = useState<{x: number; y: number} | null>(null);
-
-  const [isDrawing, setIsDrawing] = useState<boolean>(true);
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
-
-  let file: ImageFile = {
+  let file = {
     uri: '',
     name: '',
     type: '',
@@ -70,7 +59,7 @@ const SegmentScreen: React.FC = () => {
   }, [imgWidth, imgHeight]);
 
   const openImagePicker = () => {
-    const options: ImageLibraryOptions = {
+    const options = {
       mediaType: 'photo',
       includeBase64: false,
       maxHeight: 3000,
@@ -105,10 +94,19 @@ const SegmentScreen: React.FC = () => {
   };
 
   async function handleSubmit() {
-    if (file !== null) {
-      const data = new FormData();
-      data.append('image', file);
-      data.append('boundingbox', JSON.stringify(annotations));
+    if (selectedFile !== null) {
+      let data = new FormData();
+      console.log('img', selectedFile);
+      console.log('bb', annotations[0]);
+
+      data.append('image', {
+        uri: selectedFile.uri,
+        type: selectedFile.type,
+        name: selectedFile.fileName,
+      });
+      //cai nay de nguyen cai arr anno luon :)
+      data.append('boundingbox', annotations[0]);
+      console.log('data', data);
 
       const config = {
         method: 'post',
@@ -118,12 +116,18 @@ const SegmentScreen: React.FC = () => {
         data: data,
       };
 
-      try {
-        const response = await axios(config);
-        console.log('Upload successful', response.data);
-      } catch (error) {
-        console.error('Upload failed', error);
-      }
+      await axios(config)
+        .then(response => {
+          console.log('Upload successful');
+          console.log('length', response.data.length);
+          navigation.navigate('Result', {
+            image: selectedFile,
+            matrics: response.data,
+          });
+        })
+        .catch(error => {
+          console.log(error);
+        });
     } else {
       console.error('No file selected');
     }
@@ -137,9 +141,7 @@ const SegmentScreen: React.FC = () => {
     setAnnotations([]);
   };
 
-  const handlePanGestureStateChange = (
-    event: PanGestureHandlerGestureEvent,
-  ) => {
+  const handlePanGestureStateChange = event => {
     if (!selectedImg) return;
 
     if (!start) {
@@ -150,13 +152,13 @@ const SegmentScreen: React.FC = () => {
     }
   };
 
-  const handlePanGestureEvent = (event: PanGestureHandlerGestureEvent) => {
+  const handlePanGestureEvent = event => {
     if (!selectedImg || !start) return;
 
     const {translationX, translationY} = event.nativeEvent;
 
-    const newWidth = Math.max(0, Math.min(resizeW! - start.x, translationX));
-    const newHeight = Math.max(0, Math.min(resizeH! - start.y, translationY));
+    const newWidth = Math.max(0, Math.min(resizeW - start.x, translationX));
+    const newHeight = Math.max(0, Math.min(resizeH - start.y, translationY));
 
     setDimensions({w: newWidth, h: newHeight});
     setEnd({x: start.x + newWidth, y: start.y + newHeight});
@@ -170,17 +172,10 @@ const SegmentScreen: React.FC = () => {
 
   useEffect(() => {
     if (start && dimensions) {
-      const annotation: Annotation = [
-        start.x,
-        start.y,
-        dimensions.w,
-        dimensions.h,
-      ];
+      const annotation = [start.x, start.y, dimensions.w, dimensions.h];
       setAnnotations([annotation]);
     }
   }, [start, dimensions]);
-
-  console.log('arr', annotations[0]);
 
   const renderAnnotations = () => {
     if (!selectedImg || !start || !end || !newStart) return null;
@@ -252,7 +247,7 @@ const SegmentScreen: React.FC = () => {
               styles.button,
               {backgroundColor: 'rgba(227, 223, 205, 0.26)'},
             ]}>
-            <Text style={[styles.label, {color: '#020843'}]}>Reset</Text>
+            <Text style={[styles.label, {color: '#020843'}]}>RESET</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={openImagePicker}
@@ -260,14 +255,14 @@ const SegmentScreen: React.FC = () => {
               styles.button,
               {backgroundColor: 'rgba(227, 223, 205, 0.26)'},
             ]}>
-            <Text style={[styles.label, {color: '#020843'}]}>Upload</Text>
+            <Text style={[styles.label, {color: '#020843'}]}>UPLOAD</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
               handleSubmit();
             }}
             style={[styles.button, {backgroundColor: '#020843'}]}>
-            <Text style={[styles.label, {color: '#ffff'}]}>Predict</Text>
+            <Text style={[styles.label, {color: '#ffff'}]}>PREDICT</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -284,14 +279,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   text: {
-    fontSize: 20,
+    fontSize: scale(25),
     alignSelf: 'center',
     marginBottom: 10,
     color: '#020843',
+    fontFamily: FONT_FAMILY.AbhayaSemiBold,
   },
   bodyContainer: {
     width: '95%',
     height: 'auto',
+    marginTop: scale(50),
   },
   frame: {
     width: '100%',
@@ -309,7 +306,6 @@ const styles = StyleSheet.create({
     zIndex: 10000,
   },
   image: {
-    //flex: 1,
     resizeMode: 'contain',
   },
   boundingBox: {
@@ -322,7 +318,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    //marginTop: 400,
   },
   button: {
     width: '30%',
@@ -338,5 +333,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 18,
+    fontFamily: FONT_FAMILY.AbhayaMedium,
   },
 });

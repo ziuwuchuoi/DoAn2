@@ -4,15 +4,50 @@ import {
   View,
   SafeAreaView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import React from 'react';
+import {FONT_FAMILY, scale} from '../../constants';
+import {useState, useEffect} from 'react';
 
-const ResultScreen = () => {
+const ResultScreen = ({route}) => {
+  const [resizeW, setResizeW] = useState(null);
+  const [resizeH, setResizeH] = useState(null);
+  const [imgWidth, setImgWidth] = useState(null);
+  const [imgHeight, setImgHeight] = useState(null);
+  const {image, matrics} = route.params;
+  console.log('cai nha', matrics.length);
+
+  useEffect(() => {
+    if (image) {
+      setImgHeight(image.height);
+      setImgWidth(image.width);
+    }
+    if (imgWidth && imgHeight) {
+      if (imgHeight > 300) {
+        setResizeH(300);
+        const reW = 300 * (imgWidth / imgHeight);
+        setResizeW(reW);
+      } else {
+        setResizeH(imgHeight);
+        const reW = imgHeight * (imgWidth / imgHeight);
+        setResizeW(reW);
+      }
+    }
+  }, [imgWidth, imgHeight]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.bodyContainer}>
         <Text style={styles.text}>RESULT</Text>
-        <View style={styles.frame}></View>
+        <View style={styles.frame}>
+          <Image
+            width={resizeW}
+            height={resizeH}
+            source={{uri: image.uri}}
+            style={styles.image}
+          />
+        </View>
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[
@@ -23,7 +58,7 @@ const ResultScreen = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, {backgroundColor: '#020843'}]}>
-            <Text style={[styles.label, {color: '#ffff'}]}>SHARE</Text>
+            <Text style={[styles.label, {color: '#ffff'}]}>SAVE</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -40,14 +75,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   text: {
-    fontSize: 20,
+    fontSize: scale(25),
     alignSelf: 'center',
     marginBottom: 10,
     color: '#020843',
+    fontFamily: FONT_FAMILY.AbhayaSemiBold,
   },
   bodyContainer: {
     width: '95%',
     height: 'auto',
+    marginTop: scale(50),
   },
   frame: {
     width: '100%',
@@ -66,7 +103,6 @@ const styles = StyleSheet.create({
   button: {
     width: '30%',
     height: 45,
-    opacity: '26%',
     borderRadius: 30,
     margin: 'auto',
     justifyContent: 'center',
@@ -78,5 +114,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 18,
+    fontFamily: FONT_FAMILY.AbhayaMedium,
   },
 });

@@ -2,13 +2,12 @@ import React from 'react';
 import {StyleSheet, Dimensions, View, Text} from 'react-native';
 import {scale} from '../../constants';
 
-const {width, height} = Dimensions.get('window');
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {IC_Heart, IC_Home, IC_Segment} from '../assets/icons';
 import HomeScreen from '../screens/home/HomeScreen';
 import SegmentScreen from '../screens/segment/SegmentScreen';
-import {TabActions} from '@react-navigation/native';
-import {IC_Heart, IC_Home, IC_Segment} from '../assets/icons';
 import NotKnow from '../screens/notknow/NotKnow';
+import Header from '../components/header/Header';
 
 const Tab = createBottomTabNavigator();
 
@@ -76,6 +75,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
-    //backgroundColor: 'black',
   },
 });
