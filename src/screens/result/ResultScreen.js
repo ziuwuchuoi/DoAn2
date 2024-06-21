@@ -9,6 +9,7 @@ import {
 import React from 'react';
 import {FONT_FAMILY, scale} from '../../constants';
 import {useState, useEffect} from 'react';
+import {Svg, Rect} from 'react-native-svg';
 
 const ResultScreen = ({route}) => {
   const [resizeW, setResizeW] = useState(null);
@@ -17,6 +18,11 @@ const ResultScreen = ({route}) => {
   const [imgHeight, setImgHeight] = useState(null);
   const {image, matrics} = route.params;
   console.log('cai nha', matrics.length);
+
+  const [scaleFactor, setScaleFactor] = useState(null);
+  const [matrixX, setMatrixX] = useState(null);
+  const [matrixY, setMatrixY] = useState(null);
+  const [cellSize, setCellSize] = useState(null);
 
   useEffect(() => {
     if (image) {
@@ -36,6 +42,24 @@ const ResultScreen = ({route}) => {
     }
   }, [imgWidth, imgHeight]);
 
+  useEffect(() => {
+    if (matrics) {
+      const matrixRows = matrics.length;
+      const matrixCols = matrics[0].length;
+
+      const cellS = Math.min(imgWidth / matrixCols, imgHeight / matrixRows);
+      setCellSize(cellS);
+
+      const scaleF = cellSize / Math.max(matrixRows, matrixCols);
+      setScaleFactor(scaleF);
+
+      const mX = (imgWidth - matrixCols * cellSize) / 2;
+      const mY = (imgHeight - matrixRows * cellSize) / 2;
+      setMatrixX(mX);
+      setMatrixY(mY);
+    }
+  });
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.bodyContainer}>
@@ -47,6 +71,27 @@ const ResultScreen = ({route}) => {
             source={{uri: image.uri}}
             style={styles.image}
           />
+          {matrics && (
+            <Svg
+              width={imgWidth}
+              height={imgHeight}
+              style={[StyleSheet.absoluteFill, styles.svgContainer]}>
+              {matrics.map((row, rowIndex) =>
+                row.map((value, colIndex) => (
+                  <Rect
+                    key={`${rowIndex}-${colIndex}`}
+                    x={matrixX + colIndex * cellSize * scaleFactor}
+                    y={matrixY + rowIndex * cellSize * scaleFactor}
+                    width={cellSize * scaleFactor}
+                    height={cellSize * scaleFactor}
+                    fill={value === 1 ? 'green' : 'white'}
+                    stroke="black"
+                    strokeWidth="1"
+                  />
+                )),
+              )}
+            </Svg>
+          )}
         </View>
         <View style={styles.buttonContainer}>
           <TouchableOpacity
@@ -92,6 +137,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#020843',
     borderRadius: 25,
     marginBottom: 20,
+  },
+  svgContainer: {
+    position: 'absolute',
   },
   buttonContainer: {
     width: '100%',
