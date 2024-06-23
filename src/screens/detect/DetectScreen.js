@@ -121,7 +121,7 @@ const DetectScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.bodyContainer}>
-        <Text style={styles.text}>UPLOAD AN IMAGE</Text>
+        <Text style={styles.text}>Upload an image to predict</Text>
         <View style={styles.frame}>
           {selectedImg && (
             <Image
@@ -133,16 +133,6 @@ const DetectScreen = () => {
           )}
         </View>
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            onPress={() => {
-              resetBox();
-            }}
-            style={[
-              styles.button,
-              {backgroundColor: 'rgba(227, 223, 205, 0.26)'},
-            ]}>
-            <Text style={[styles.label, {color: '#020843'}]}>RESET</Text>
-          </TouchableOpacity>
           <TouchableOpacity
             onPress={openImagePicker}
             style={[
@@ -188,7 +178,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 300,
     borderRadius: 25,
-    marginBottom: 20,
+    marginBottom: 50,
     alignItems: 'center',
     backgroundColor: '#020843',
   },
@@ -214,8 +204,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   button: {
-    width: '30%',
-    height: 45,
+    width: '35%',
+    height: 50,
     borderRadius: 30,
     margin: 'auto',
     justifyContent: 'center',

@@ -5,10 +5,9 @@ import {scale} from '../../constants';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {IC_Brain, IC_History, IC_Home} from '../assets/icons';
 import HomeScreen from '../screens/home/HomeScreen';
-import SegmentScreen from '../screens/segment/SegmentScreen';
-import NotKnow from '../screens/notknow/NotKnow';
 import Header from '../components/header/Header';
 import DetectScreen from '../screens/detect/DetectScreen';
+import HistoryScreen from '../screens/history/HistoryScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -45,7 +44,7 @@ const BottomTabs = () => {
         name="Detect"
         component={DetectScreen}
         options={{
-          headerShown: false,
+          header: () => <Header title={'PREDICT'}></Header>,
           tabBarIcon: ({color, size}) => (
             <View style={styles.tab}>
               <IC_Brain color={color} size={size} />
@@ -54,10 +53,10 @@ const BottomTabs = () => {
         }}
       />
       <Tab.Screen
-        name="NotKnow"
-        component={NotKnow}
+        name="History"
+        component={HistoryScreen}
         options={{
-          headerShown: false,
+          header: () => <Header title={'HISTORY'}></Header>,
           tabBarIcon: ({color, size}) => (
             <View style={styles.tab}>
               <IC_History color={color} size={size} />

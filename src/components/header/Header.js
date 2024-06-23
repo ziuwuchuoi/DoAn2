@@ -15,17 +15,26 @@ import {IC_Back} from '../../assets/icons';
 const {width, height} = Dimensions.get('window');
 
 const Header = props => {
+  const renderBackButton = () => {
+    if (props.onBack) {
+      return (
+        <TouchableOpacity onPress={props.onBack}>
+          <IC_Back style={{width: 100, height: 100}} />
+        </TouchableOpacity>
+      );
+    } else {
+      // Return an empty view if props.onBack is not provided
+      return <View style={{width: 100, height: 100}} />;
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity onPress={props.onBack}>
-          <IC_Back style={{width: 100, height: 100}}></IC_Back>
-        </TouchableOpacity>
-      </View>
+      <View style={styles.buttonContainer}>{renderBackButton()}</View>
       <View style={styles.logoContainer}>
         <Text style={styles.title}>{props.title}</Text>
       </View>
-      <View style={styles.aboutContainer}></View>
+      <View style={styles.aboutContainer} />
     </View>
   );
 };

@@ -81,7 +81,7 @@ const PredictScreen = ({route}) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.bodyContainer}>
-        <Text style={styles.text}>PREDICTION</Text>
+        <Text style={styles.text}>Here is your prediction!</Text>
         <View style={styles.frame}>
           {image && (
             <Image
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     height: 300,
     backgroundColor: '#020843',
     borderRadius: 25,
-    marginBottom: 20,
+    marginBottom: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -152,8 +152,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   button: {
-    width: '30%',
-    height: 45,
+    width: '35%',
+    height: 50,
     borderRadius: 30,
     margin: 'auto',
     justifyContent: 'center',
