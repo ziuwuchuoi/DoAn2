@@ -9,34 +9,20 @@ import {
 } from 'react-native';
 import React, {useState, useRef, useEffect} from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
-import {useImage} from '@shopify/react-native-skia';
-import {
-  GestureHandlerRootView,
-  PanGestureHandler,
-} from 'react-native-gesture-handler';
+
 import axios from 'axios';
 import {useNavigation} from '@react-navigation/native';
 import {scale} from '../../constants';
 import {FONT_FAMILY} from '../../constants';
 
-const SegmentScreen = () => {
+const DetectScreen = () => {
   const navigation = useNavigation();
   const [selectedImg, setSelectedImg] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [imgWidth, setImgWidth] = useState(null);
   const [imgHeight, setImgHeight] = useState(null);
-
-  const image = useImage(selectedImg);
   const [resizeW, setResizeW] = useState(null);
   const [resizeH, setResizeH] = useState(null);
-
-  const [start, setStart] = useState(null);
-  const [end, setEnd] = useState(null);
-  const [dimensions, setDimensions] = useState(null);
-  const [newStart, setNewStart] = useState(null);
-
-  const [isDrawing, setIsDrawing] = useState(true);
-  const [annotations, setAnnotations] = useState([]);
 
   let file = {
     uri: '',
@@ -97,21 +83,19 @@ const SegmentScreen = () => {
     if (selectedFile !== null) {
       let data = new FormData();
       console.log('img', selectedFile);
-      console.log('bb', annotations[0]);
 
       data.append('image', {
         uri: selectedFile.uri,
         type: selectedFile.type,
         name: selectedFile.fileName,
       });
-      //cai nay de nguyen cai arr anno luon :)
-      data.append('boundingbox', annotations[0]);
+
       console.log('data', data);
 
       const config = {
         method: 'post',
         maxBodyLength: Infinity,
-        url: 'https://zichuoi-segmedda2.hf.space/test',
+        url: 'https://zichuoi-segmedda2.hf.space/detect',
         headers: {'Content-Type': 'multipart/form-data'},
         data: data,
       };
@@ -119,15 +103,13 @@ const SegmentScreen = () => {
       await axios(config)
         .then(response => {
           console.log('Upload successful');
-          console.log('length', response.data.length);
-          navigation.navigate('Result', {
-            image: selectedFile,
-            matrics: response.data,
-            bbox: annotations[0],
-            imgH: resizeH,
-            imgW: resizeW,
+          navigation.navigate('Predict', {
+            imageData: response.data,
+            imageHeight: resizeH,
+            imageWidth: resizeW,
           });
         })
+
         .catch(error => {
           console.log(error);
         });
@@ -136,110 +118,19 @@ const SegmentScreen = () => {
     }
   }
 
-  const resetBox = () => {
-    setStart(null);
-    setNewStart(null);
-    setEnd(null);
-    setDimensions(null);
-    setAnnotations([]);
-  };
-
-  const handlePanGestureStateChange = event => {
-    if (!selectedImg) return;
-
-    if (!start) {
-      const {x, y} = event.nativeEvent;
-      const newStart = {x, y};
-      setStart(newStart);
-      setIsDrawing(true);
-    }
-  };
-
-  const handlePanGestureEvent = event => {
-    if (!selectedImg || !start) return;
-
-    const {translationX, translationY} = event.nativeEvent;
-
-    const newWidth = Math.max(0, Math.min(resizeW - start.x, translationX));
-    const newHeight = Math.max(0, Math.min(resizeH - start.y, translationY));
-
-    setDimensions({w: newWidth, h: newHeight});
-    setEnd({x: start.x + newWidth, y: start.y + newHeight});
-    if (end) {
-      setNewStart({
-        x: Math.abs(end.x - newWidth),
-        y: Math.abs(end.y - newHeight),
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (start && dimensions) {
-      const annotation = [start.x, start.y, dimensions.w, dimensions.h];
-      setAnnotations([annotation]);
-    }
-  }, [start, dimensions]);
-
-  const renderAnnotations = () => {
-    if (!selectedImg || !start || !end || !newStart) return null;
-
-    const boxTop = Math.min(newStart.y, end.y);
-    const boxLeft = Math.min(newStart.x, end.x);
-    const boxWidth = Math.abs(newStart.x - end.x);
-    const boxHeight = Math.abs(newStart.y - end.y);
-
-    return (
-      <View
-        style={{
-          position: 'absolute',
-          top: boxTop,
-          left: boxLeft,
-          width: boxWidth,
-          height: boxHeight,
-          borderWidth: 2,
-          borderColor: 'blue',
-          backgroundColor: 'rgba(0, 0, 255, 0.3)',
-        }}
-      />
-    );
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.bodyContainer}>
         <Text style={styles.text}>UPLOAD AN IMAGE</Text>
         <View style={styles.frame}>
-          <GestureHandlerRootView style={{flex: 1}}>
-            {selectedImg && resizeW && resizeH && (
-              <PanGestureHandler
-                onGestureEvent={handlePanGestureEvent}
-                onHandlerStateChange={handlePanGestureStateChange}>
-                <View>
-                  <Image
-                    width={resizeW}
-                    height={resizeH}
-                    source={{uri: selectedImg}}
-                    style={styles.image}
-                  />
-                  {isDrawing && start && dimensions && (
-                    <View
-                      style={{
-                        position: 'absolute',
-                        backgroundColor: 'rgba(0, 0, 255, 0.3)',
-                        top: start.y,
-                        left: start.x,
-                        width: dimensions.w,
-                        height: dimensions.h,
-                        borderWidth: 2,
-                        borderColor: 'blue',
-                      }}
-                    />
-                  )}
-                  {!isDrawing && renderAnnotations()}
-                </View>
-              </PanGestureHandler>
-            )}
-          </GestureHandlerRootView>
+          {selectedImg && (
+            <Image
+              width={resizeW}
+              height={resizeH}
+              source={{uri: selectedImg}}
+              style={styles.image}
+            />
+          )}
         </View>
         <View style={styles.buttonContainer}>
           <TouchableOpacity
@@ -273,7 +164,7 @@ const SegmentScreen = () => {
   );
 };
 
-export default SegmentScreen;
+export default DetectScreen;
 
 const styles = StyleSheet.create({
   container: {

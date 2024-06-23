@@ -8,6 +8,7 @@ import HomeScreen from '../screens/home/HomeScreen';
 import SegmentScreen from '../screens/segment/SegmentScreen';
 import NotKnow from '../screens/notknow/NotKnow';
 import Header from '../components/header/Header';
+import DetectScreen from '../screens/detect/DetectScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -41,8 +42,8 @@ const BottomTabs = () => {
         }}
       />
       <Tab.Screen
-        name="Segment"
-        component={SegmentScreen}
+        name="Detect"
+        component={DetectScreen}
         options={{
           headerShown: false,
           tabBarIcon: ({color, size}) => (

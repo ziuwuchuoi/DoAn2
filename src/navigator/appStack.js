@@ -8,6 +8,7 @@ import SegmentScreen from '../screens/segment/SegmentScreen';
 import ResultScreen from '../screens/result/ResultScreen';
 import BottomTabs from './bottomTab';
 import Header from '../components/header/Header';
+import PredictScreen from '../screens/predict/PredictScreen';
 //import {useNavigation} from '@react-navigation/native';
 
 const AppStack = () => {
@@ -21,12 +22,12 @@ const AppStack = () => {
         options={{headerShown: false}}
       />
       <Stack.Screen
-        name="Result"
-        component={ResultScreen}
+        name="Predict"
+        component={PredictScreen}
         options={{
           header: () => (
             <Header
-              onBack={() => navigation.navigate('Segment')}
+              onBack={() => navigation.navigate('Detect')}
               title={'RESULT'}></Header>
           ),
         }}
