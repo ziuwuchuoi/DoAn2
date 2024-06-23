@@ -4,13 +4,16 @@ import {memo} from 'react';
 const SvgComponent = props => (
   <Svg
     xmlns="http://www.w3.org/2000/svg"
-    width={11}
-    height={19}
+    width={17}
+    height={32}
     fill="none"
     {...props}>
     <Path
-      fill="#020843"
-      d="M10.372.367a1.25 1.25 0 0 0-1.77 0l-8.31 8.31a.996.996 0 0 0 0 1.41l8.31 8.31c.49.49 1.28.49 1.77 0s.49-1.28 0-1.77l-7.24-7.25 7.25-7.25c.48-.48.48-1.28-.01-1.76Z"
+      stroke="#000"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.5}
+      d="M16 1S1 12.047 1 16c0 3.953 15 15 15 15"
     />
   </Svg>
 );

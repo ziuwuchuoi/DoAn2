@@ -3,7 +3,7 @@ import {StyleSheet, Dimensions, View, Text} from 'react-native';
 import {scale} from '../../constants';
 
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {IC_Heart, IC_Home, IC_Segment} from '../assets/icons';
+import {IC_Brain, IC_History, IC_Home} from '../assets/icons';
 import HomeScreen from '../screens/home/HomeScreen';
 import SegmentScreen from '../screens/segment/SegmentScreen';
 import NotKnow from '../screens/notknow/NotKnow';
@@ -48,7 +48,7 @@ const BottomTabs = () => {
           headerShown: false,
           tabBarIcon: ({color, size}) => (
             <View style={styles.tab}>
-              <IC_Segment color={color} size={size} />
+              <IC_Brain color={color} size={size} />
             </View>
           ),
         }}
@@ -60,7 +60,7 @@ const BottomTabs = () => {
           headerShown: false,
           tabBarIcon: ({color, size}) => (
             <View style={styles.tab}>
-              <IC_Heart color={color} size={size} />
+              <IC_History color={color} size={size} />
             </View>
           ),
         }}

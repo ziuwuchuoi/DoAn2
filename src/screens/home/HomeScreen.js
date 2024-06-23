@@ -1,26 +1,29 @@
 import {
   SafeAreaView,
   StyleSheet,
-  PermissionsAndroid,
   Text,
   View,
   Image,
   Dimensions,
-  TouchableOpacity,
+  ImageBackground,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 
-import {useNavigation} from '@react-navigation/native';
-import Header from '../../components/header/Header';
-import {scale} from '../../constants';
+import {IMG_Home, IMG_Moon} from '../../assets/images';
 
 const {width, height} = Dimensions.get('window');
 
 const HomeScreen = () => {
-  const navigation = useNavigation();
   return (
     <SafeAreaView style={styles.container}>
-      <Text>Home</Text>
+      <View
+        style={{
+          justifyContent: 'center',
+          alignContent: 'center',
+        }}>
+        <Image source={IMG_Moon} style={styles.img}></Image>
+        <Image source={IMG_Home} style={styles.image}></Image>
+      </View>
     </SafeAreaView>
   );
 };
@@ -29,12 +32,23 @@ export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'pink',
-    // height: scale(100),
+    backgroundColor: 'white',
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
   },
-  body: {},
-  bottomContainer: {},
+  img: {
+    alignSelf: 'center',
+    width: Dimensions.get('window').width,
+    height: 300,
+    resizeMode: 'cover',
+  },
+  image: {
+    width: 300,
+    height: 300,
+    position: 'absolute',
+    resizeMode: 'cover',
+    top: 100,
+    alignSelf: 'center',
+  },
 });

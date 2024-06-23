@@ -66,6 +66,7 @@ const PredictScreen = ({route}) => {
   const downloadImage = async () => {
     const base64Image = imageData; // Base64 image data
     const downloadDest = `${RNFS.DownloadDirectoryPath}/image.jpg`;
+    console.log('dest', downloadDest);
 
     try {
       await RNFS.writeFile(downloadDest, base64Image, 'base64');
