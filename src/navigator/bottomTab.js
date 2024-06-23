@@ -1,24 +1,20 @@
 import React from 'react';
-import {StyleSheet, Dimensions, View, Text} from 'react-native';
-import {scale} from '../../constants';
-
+import {StyleSheet, View} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {IC_Brain, IC_History, IC_Home} from '../assets/icons';
 import HomeScreen from '../screens/home/HomeScreen';
 import Header from '../components/header/Header';
 import DetectScreen from '../screens/detect/DetectScreen';
 import HistoryScreen from '../screens/history/HistoryScreen';
+import {IC_Home, IC_Brain, IC_History} from '../assets/icons';
 
 const Tab = createBottomTabNavigator();
 
 const BottomTabs = () => {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({route}) => ({
         tabBarStyle: {
           backgroundColor: '#020843',
-          zIndex: 0,
-          elevation: 0,
           height: 70,
           borderTopWidth: 0,
           position: 'absolute',
@@ -27,41 +23,58 @@ const BottomTabs = () => {
           borderBottomRightRadius: 0,
         },
         tabBarShowLabel: false,
-      }}>
+        tabBarIcon: ({focused, color, size}) => {
+          let iconName;
+          let iconColor;
+
+          if (focused) {
+            iconColor = '#00E0FF';
+          } else {
+            iconColor = 'white';
+          }
+
+          if (route.name === 'Home') {
+            iconName = focused ? (
+              <IC_Home color={iconColor} />
+            ) : (
+              <IC_Home color={iconColor} />
+            );
+          } else if (route.name === 'Detect') {
+            iconName = focused ? (
+              <IC_Brain color={iconColor} />
+            ) : (
+              <IC_Brain color={iconColor} />
+            );
+          } else if (route.name === 'History') {
+            iconName = focused ? (
+              <IC_History color={iconColor} />
+            ) : (
+              <IC_History color={iconColor} />
+            );
+          }
+
+          return <View style={styles.tab}>{iconName}</View>;
+        },
+      })}>
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
           headerShown: false,
-          tabBarIcon: ({color, size}) => (
-            <View style={styles.tab}>
-              <IC_Home color={color} size={size} />
-            </View>
-          ),
         }}
       />
       <Tab.Screen
         name="Detect"
         component={DetectScreen}
         options={{
-          header: () => <Header title={'PREDICT'}></Header>,
-          tabBarIcon: ({color, size}) => (
-            <View style={styles.tab}>
-              <IC_Brain color={color} size={size} />
-            </View>
-          ),
+          header: () => <Header title={'PREDICT'} />,
         }}
       />
       <Tab.Screen
         name="History"
         component={HistoryScreen}
         options={{
-          header: () => <Header title={'HISTORY'}></Header>,
-          tabBarIcon: ({color, size}) => (
-            <View style={styles.tab}>
-              <IC_History color={color} size={size} />
-            </View>
-          ),
+          header: () => <Header title={'HISTORY'} />,
         }}
       />
     </Tab.Navigator>

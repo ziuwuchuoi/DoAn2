@@ -9,7 +9,7 @@ const SvgComponent = props => (
     fill="none"
     {...props}>
     <Path
-      stroke="#fff"
+      stroke={props.color}
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={1.5}
