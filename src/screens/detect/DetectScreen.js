@@ -14,6 +14,7 @@ import axios from 'axios';
 import {useNavigation} from '@react-navigation/native';
 import {scale} from '../../constants';
 import {FONT_FAMILY} from '../../constants';
+import {Chase, Wave} from 'react-native-animated-spinkit';
 
 const DetectScreen = () => {
   const navigation = useNavigation();
@@ -23,6 +24,7 @@ const DetectScreen = () => {
   const [imgHeight, setImgHeight] = useState(null);
   const [resizeW, setResizeW] = useState(null);
   const [resizeH, setResizeH] = useState(null);
+  const [isLoad, setIsLoad] = useState(false);
 
   let file = {
     uri: '',
@@ -81,6 +83,7 @@ const DetectScreen = () => {
 
   async function handleSubmit() {
     if (selectedFile !== null) {
+      setIsLoad(true);
       let data = new FormData();
       console.log('img', selectedFile);
 
@@ -103,6 +106,7 @@ const DetectScreen = () => {
       await axios(config)
         .then(response => {
           console.log('Upload successful');
+          setIsLoad(false);
           navigation.navigate('Predict', {
             imageData: response.data,
             imageHeight: resizeH,
@@ -132,23 +136,29 @@ const DetectScreen = () => {
             />
           )}
         </View>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            onPress={openImagePicker}
-            style={[
-              styles.button,
-              {backgroundColor: 'rgba(227, 223, 205, 0.26)'},
-            ]}>
-            <Text style={[styles.label, {color: '#020843'}]}>UPLOAD</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              handleSubmit();
-            }}
-            style={[styles.button, {backgroundColor: '#020843'}]}>
-            <Text style={[styles.label, {color: '#ffff'}]}>PREDICT</Text>
-          </TouchableOpacity>
-        </View>
+        {!isLoad ? (
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              onPress={openImagePicker}
+              style={[
+                styles.button,
+                {backgroundColor: 'rgba(227, 223, 205, 0.26)'},
+              ]}>
+              <Text style={[styles.label, {color: '#020843'}]}>UPLOAD</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                handleSubmit();
+              }}
+              style={[styles.button, {backgroundColor: '#020843'}]}>
+              <Text style={[styles.label, {color: '#ffff'}]}>PREDICT</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={{justifyContent: 'center', alignItems: 'center'}}>
+            <Wave size={48} color="#020843"></Wave>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -181,6 +191,7 @@ const styles = StyleSheet.create({
     marginBottom: 50,
     alignItems: 'center',
     backgroundColor: '#020843',
+    justifyContent: 'center',
   },
   canvas: {
     width: '100%',
