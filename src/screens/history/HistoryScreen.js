@@ -2,7 +2,7 @@ import {SafeAreaView, StyleSheet, Text, View, ScrollView} from 'react-native';
 import React, {useEffect, useState} from 'react';
 import HistoryCard from '../../components/historyCard/HistoryCard';
 import {getData} from '../../utils/utils';
-import {scale} from '../../constants';
+import {FONT_FAMILY, scale} from '../../constants';
 
 const HistoryScreen = () => {
   const [savedHistory, setSavedHistory] = useState([]);
@@ -23,12 +23,15 @@ const HistoryScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        <View style={{height: scale(30)}} />
-        {savedHistory.map((item, index) => {
-          return <HistoryCard key={index} data={item} />;
-        })}
-      </ScrollView>
+      {savedHistory.length === 0 ? (
+        <Text style={styles.noHistoryText}>No history yet!</Text>
+      ) : (
+        <ScrollView style={styles.scrollView}>
+          {savedHistory.map((item, index) => (
+            <HistoryCard key={index} data={item} />
+          ))}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
@@ -46,5 +49,13 @@ const styles = StyleSheet.create({
     textAlign: 'justify',
     paddingHorizontal: 20,
     marginBottom: 50,
+  },
+  noHistoryText: {
+    fontSize: 20,
+    color: 'black',
+    fontFamily: FONT_FAMILY.AbhayaRegular,
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginTop: 10,
   },
 });
