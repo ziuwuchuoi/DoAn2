@@ -14,17 +14,37 @@ import {FONT_FAMILY, scale} from '../../constants';
 import {useState, useEffect} from 'react';
 import Share from 'react-native-share';
 import * as RNFS from '@dr.pogodin/react-native-fs';
+import {storeData} from '../../utils/utils';
 
 const PredictScreen = ({route}) => {
   const {imageData, imageWidth, imageHeight} = route.params;
   const [image, setImage] = useState(null);
+  const cls = imageData[1];
+  const conf = imageData[2];
 
   useEffect(() => {
     if (imageData) {
-      const imgSrc = `data:image/jpeg;base64,${imageData}`;
+      const imgSrc = `data:image/jpeg;base64,${imageData[0]}`;
       setImage(imgSrc);
     }
   }, [imageData]);
+
+  useEffect(() => {
+    if (image) {
+      const randomId = generateRandomId();
+      console.log(randomId);
+      console.log(image);
+      const dataToStorage = {
+        id: randomId,
+        time: getCurrentTime(),
+        date: getCurrentDate(),
+        url: image,
+        cls: cls,
+        conf: conf,
+      };
+      storeData(dataToStorage);
+    }
+  }, [image]);
 
   async function handleShare() {
     try {
@@ -63,6 +83,30 @@ const PredictScreen = ({route}) => {
     }
   }
 
+  const generateRandomId = () => {
+    return (
+      'id-' +
+      Math.random().toString(36).substr(2, 9) +
+      '-' +
+      Date.now().toString(36)
+    );
+  };
+
+  const getCurrentTime = () => {
+    const date = new Date();
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    return `${hours}:${minutes}:${seconds}`;
+  };
+  const getCurrentDate = () => {
+    const date = new Date();
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   function generateImageName() {
     const now = new Date();
 
@@ -78,7 +122,6 @@ const PredictScreen = ({route}) => {
 
     // Construct the timestamp string
     const timestamp = `${year}-${month}-${day}-${hours}-${minutes}-${seconds}`;
-
     return timestamp;
   }
 

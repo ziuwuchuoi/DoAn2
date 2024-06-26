@@ -9,13 +9,19 @@ import ResultScreen from '../screens/result/ResultScreen';
 import BottomTabs from './bottomTab';
 import Header from '../components/header/Header';
 import PredictScreen from '../screens/predict/PredictScreen';
+import LoadingScreen from '../screens/loading/LoadingScreen';
 //import {useNavigation} from '@react-navigation/native';
 
 const AppStack = () => {
   const navigation = useNavigation();
   const Stack = createNativeStackNavigator();
   return (
-    <Stack.Navigator>
+    <Stack.Navigator initialRouteName="Loading" options={{headerShown: false}}>
+      <Stack.Screen
+        name="Loading"
+        component={LoadingScreen}
+        options={{headerShown: false}}
+      />
       <Stack.Screen
         name="BottomTabs"
         component={BottomTabs}
