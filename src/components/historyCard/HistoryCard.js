@@ -1,15 +1,12 @@
 import React from 'react';
 import {StyleSheet, Text, View, Image} from 'react-native';
+import {FONT_FAMILY} from '../../constants';
 
 const HistoryCard = ({data}) => {
   const {cls, conf, date, id, time, url} = data;
-
-  // Map through the cls array to replace 0 and 1 with "negative" and "positive"
   const clsText = cls
     .map(item => (item === 0 ? 'negative' : 'positive'))
     .join(', ');
-
-  // Map through the conf array to format numbers to three decimal places
   const confText = conf.map(item => item.toFixed(3)).join(', ');
 
   return (
@@ -57,8 +54,9 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 10,
   },
   text: {
-    fontSize: 16,
+    fontSize: 20,
     marginBottom: 5,
     color: '#020843',
+    fontFamily: FONT_FAMILY.AbhayaRegular,
   },
 });
