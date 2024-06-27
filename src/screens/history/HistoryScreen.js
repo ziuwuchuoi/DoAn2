@@ -1,25 +1,30 @@
 import {SafeAreaView, StyleSheet, Text, View, ScrollView} from 'react-native';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import HistoryCard from '../../components/historyCard/HistoryCard';
 import {getData} from '../../utils/utils';
 import {FONT_FAMILY, scale} from '../../constants';
+import {useFocusEffect} from '@react-navigation/native';
 
 const HistoryScreen = () => {
   const [savedHistory, setSavedHistory] = useState([]);
-  useEffect(() => {
-    const loadHistory = async () => {
-      const getHistory = await getData();
-      console.log(getHistory);
 
-      if (getHistory) {
-        setSavedHistory(getHistory);
-        console.log('set history successfully');
-      } else {
-        console.log('set history unsuccessfully');
-      }
-    };
-    loadHistory();
-  }, []);
+  const loadHistory = async () => {
+    const getHistory = await getData();
+    console.log(getHistory);
+
+    if (getHistory) {
+      setSavedHistory(getHistory);
+      console.log('set history successfully');
+    } else {
+      console.log('set history unsuccessfully');
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadHistory();
+    }, []),
+  );
 
   return (
     <SafeAreaView style={styles.container}>

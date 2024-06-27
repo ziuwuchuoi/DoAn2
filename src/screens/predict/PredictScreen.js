@@ -15,8 +15,10 @@ import {useState, useEffect} from 'react';
 import Share from 'react-native-share';
 import * as RNFS from '@dr.pogodin/react-native-fs';
 import {storeData} from '../../utils/utils';
+import {useNavigation} from '@react-navigation/native';
 
 const PredictScreen = ({route}) => {
+  const navigation = useNavigation();
   const {imageData, imageWidth, imageHeight} = route.params;
   const [image, setImage] = useState(null);
   const cls = imageData[1];
@@ -157,6 +159,14 @@ const PredictScreen = ({route}) => {
         </View>
         <View style={styles.buttonContainer}>
           <TouchableOpacity
+            onPress={() => navigation.navigate('Home')}
+            style={[
+              styles.button,
+              {backgroundColor: 'rgba(227, 223, 205, 0.26)'},
+            ]}>
+            <Text style={[styles.label, {color: '#020843'}]}>HOME</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={handleShare}
             style={[
               styles.button,
@@ -215,7 +225,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   button: {
-    width: '35%',
+    width: '30%',
     height: 50,
     borderRadius: 30,
     margin: 'auto',

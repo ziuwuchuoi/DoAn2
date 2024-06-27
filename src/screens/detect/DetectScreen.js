@@ -107,6 +107,7 @@ const DetectScreen = () => {
         .then(response => {
           console.log('Upload successful');
           setIsLoad(false);
+          setSelectedImg(null);
           navigation.navigate('Predict', {
             imageData: response.data,
             imageHeight: resizeH,

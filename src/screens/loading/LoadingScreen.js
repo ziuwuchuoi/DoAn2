@@ -7,7 +7,7 @@ class LoadingScreen extends Component {
   componentDidMount() {
     this.timeoutHandle = setTimeout(() => {
       this.props.navigation.navigate('BottomTabs');
-    }, 5000);
+    }, 4000);
   }
   render() {
     return (
